@@ -1,0 +1,23 @@
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Build
+target/
+build/
+!mvnw*
+!gradlew*
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application
+application.properties
+application-dev.properties
