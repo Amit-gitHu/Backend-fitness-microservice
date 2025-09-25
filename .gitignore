@@ -19,5 +19,5 @@ logs/
 Thumbs.db
 
 # Application
-application.properties
-application-dev.properties
+application.yml
+application-dev.yml
