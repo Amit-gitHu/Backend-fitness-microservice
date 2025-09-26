@@ -29,4 +29,6 @@ public interface UserService {
     UserResponse getUserProfile(String userId);
 
     UserResponse registerUser(@Valid RegisterRequest registerRequest);
+
+    boolean existsByUserId(String userId);
 }

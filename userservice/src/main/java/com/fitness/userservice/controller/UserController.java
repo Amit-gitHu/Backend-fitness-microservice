@@ -80,4 +80,9 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers(page, size));
     }
 
+    @GetMapping("/{userId}/validate")
+    public ResponseEntity<Boolean> validateUser(@PathVariable String userId) {
+        return ResponseEntity.ok(userService.existsByUserId(userId));
+    }
+
 }
