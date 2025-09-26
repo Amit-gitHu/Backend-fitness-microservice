@@ -1,5 +1,7 @@
 package com.fitness.userservice.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitness.userservice.dto.*;
 import com.fitness.userservice.model.User;
 import com.fitness.userservice.model.UserRole;
@@ -13,13 +15,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+/*@Transactional*/
 @Slf4j
 public class UserServiceImpl implements UserService {
 
@@ -30,6 +31,13 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;*/
 
     public UserResponse registerUser(@Valid RegisterRequest registerRequest) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            System.out.println("Register new user = " + objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(registerRequest));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException();
+        }
 
         if (userRepository.existsByEmail(registerRequest.getEmail()))
             throw new RuntimeException("Email already exists...");
@@ -43,6 +51,12 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
 
         return getUserResponse(savedUser);
+    }
+
+    @Override
+    public boolean existsByUserId(String userId) {
+        log.info("Existing user found : {}", userId);
+        return userRepository.existsById(userId);
     }
 
     private UserResponse getUserResponse(User savedUser) {
@@ -133,6 +147,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse updateUser(String userId, UpdateUserRequest updateRequest) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            log.info("Updated existing user : {}", userId);
+            System.out.println("Register new user = " + objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(updateRequest));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException();
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
