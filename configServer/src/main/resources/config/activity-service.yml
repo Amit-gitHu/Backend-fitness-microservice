@@ -1,0 +1,45 @@
+server:
+  port: 8082
+
+spring:
+  # MongoDB Configuration
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/
+      database: fitness_activity_db
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    connection-timeout: 15000
+
+# Custom RabbitMQ Properties
+rabbitmq:
+  queue:
+    name: activity.queue
+  exchange:
+    name: activity.exchange
+  routing:
+    key: activity.routing.key
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+
+# Logging
+logging:
+  level:
+    com.fitness.activityservice: DEBUG
+    org.springframework.amqp: DEBUG
+    root: INFO
