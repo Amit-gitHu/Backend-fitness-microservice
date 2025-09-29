@@ -1,0 +1,51 @@
+server:
+  port: 8083
+
+spring:
+  # MongoDB Configuration
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/
+      database: fitness_recommendation
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    connection-timeout: 15000
+
+# Custom RabbitMQ Properties
+rabbitmq:
+  queue:
+    name: activity.queue
+  exchange:
+    name: activity.exchange
+  routing:
+    key: activity.routing.key
+
+# Gemini API Configuration
+gemini:
+  api:
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=
+    key: ${GEMINI_API_KEY:AIzaSyAElEwK4p6XZziEb21XFxpr6kNZTLjtTbw}
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+
+# Logging
+logging:
+  level:
+    com.fitness.aiservice: DEBUG
+    org.springframework.amqp: DEBUG
+    root: INFO

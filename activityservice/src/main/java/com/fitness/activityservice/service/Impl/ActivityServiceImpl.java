@@ -8,6 +8,7 @@ import com.fitness.activityservice.service.ActivityService;
 import com.fitness.activityservice.service.UserValidateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,9 +22,7 @@ import java.util.stream.Collectors;
 public class ActivityServiceImpl implements ActivityService {
 
     private final ActivityRepository activityRepository;
-
     private final UserValidateService userValidateService;
-
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchange.name}")
@@ -34,11 +33,16 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public ActivityResponse trackActivity(ActivityRequest activityRequest) {
+        log.info("Processing activity tracking request for user: {}", activityRequest.getUserId());
 
+        // Validate user
         boolean isValidUser = userValidateService.validateUser(activityRequest.getUserId());
         if (!isValidUser) {
+            log.error("Invalid user attempted to track activity: {}", activityRequest.getUserId());
             throw new RuntimeException("Invalid User : " + activityRequest.getUserId());
         }
+
+        // Build activity entity
         Activity activity = Activity.builder()
                 .userId(activityRequest.getUserId())
                 .type(activityRequest.getType())
@@ -48,21 +52,40 @@ public class ActivityServiceImpl implements ActivityService {
                 .additionalMetrics(activityRequest.getAdditionalMetrics())
                 .build();
 
+        // Save activity to database
         Activity savedActivity = activityRepository.save(activity);
+        log.info("Activity saved successfully with ID: {}", savedActivity.getActivityId());
 
-        //Publish to RabbitMq to AI processing
-        try {
-            rabbitTemplate.convertAndSend(exchange, routingKey, savedActivity);
-        } catch (Exception e) {
-            log.error("Failed to publish activity to RabbitMQ : ", e);
-        }
+        // Publish to RabbitMQ for AI processing
+        publishToRabbitMQ(savedActivity);
 
         return mapToResponse(savedActivity);
     }
 
+    private void publishToRabbitMQ(Activity activity) {
+        try {
+            log.info("Publishing activity to RabbitMQ - Exchange: {}, RoutingKey: {}, ActivityId: {}",
+                    exchange, routingKey, activity.getActivityId());
+
+            rabbitTemplate.convertAndSend(exchange, routingKey, activity);
+
+            log.info("✅ Successfully published activity {} to RabbitMQ", activity.getActivityId());
+
+        } catch (AmqpException e) {
+            log.error("❌ AMQP Exception - Failed to publish activity {} to RabbitMQ: {}",
+                    activity.getActivityId(), e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("❌ Unexpected error - Failed to publish activity {} to RabbitMQ: {}",
+                    activity.getActivityId(), e.getMessage(), e);
+        }
+    }
+
     @Override
     public List<ActivityResponse> getUserActivities(String userId) {
+        log.info("Fetching activities for user: {}", userId);
         List<Activity> activities = activityRepository.findByUserId(userId);
+        log.info("Found {} activities for user: {}", activities.size(), userId);
+
         return activities.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -70,9 +93,16 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public ActivityResponse getActivity(String activityId) {
+        log.info("Fetching activity with ID: {}", activityId);
         return activityRepository.findById(activityId)
-                .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Activity not found with ID : " + activityId));
+                .map(activity -> {
+                    log.info("Activity found: {}", activityId);
+                    return mapToResponse(activity);
+                })
+                .orElseThrow(() -> {
+                    log.error("Activity not found with ID: {}", activityId);
+                    return new RuntimeException("Activity not found with ID : " + activityId);
+                });
     }
 
     private ActivityResponse mapToResponse(Activity savedActivity) {
@@ -88,6 +118,4 @@ public class ActivityServiceImpl implements ActivityService {
         response.setUpdatedAt(savedActivity.getUpdatedAt());
         return response;
     }
-
-
 }
