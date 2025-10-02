@@ -30,7 +30,7 @@ rabbitmq:
 gemini:
   api:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=
-    key: ${GEMINI_API_KEY:AIzaSyAElEwK4p6XZziEb21XFxpr6kNZTLjtTbw}
+    key: ${GEMINI_API_KEY:#124giveKeyHere}
 
 # Eureka Configuration
 eureka:
